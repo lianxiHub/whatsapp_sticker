@@ -6,25 +6,41 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
-import 'main.dart';
+//import 'base.dart';
 import 'package:share_extend/share_extend.dart';
+import 'package:path/path.dart' as p;
 
-//Directory _appDocsDir;
+Directory _appDocsDir;
+File fileFromDocsDir(String filename)  {
+  String pathName = p.join(_appDocsDir.path, filename);
+  return File(pathName);
+}
 const iconUrl = "http://necta.online/emoji/icons/";
 class readPackWidget extends StatefulWidget{
   readPackWidget({
     Key key,
     this.packid,
     @required this.name,
+    this.pro
   }):super(key:key);
   String packid;
   String name;
+  String pro;
 
   @override
   readPackState createState() => readPackState();
 }
 
 class readPackState extends State<readPackWidget>{
+  Future setDir () async{
+    _appDocsDir =await getApplicationDocumentsDirectory();
+  }
+  List iconList=[];
+  void initState(){
+    setDir();
+    print("initState");
+    getPack();
+  }
   Future getPack() async{
     HttpClient httpClient = new HttpClient();
     //打开Http连接
@@ -33,7 +49,11 @@ class readPackState extends State<readPackWidget>{
     Map data = jsonDecode(await response.transform(utf8.decoder).join());
     httpClient.close();
     if(data['result'] == "OK"){
-      return data['iconlist'];
+//      return data['iconlist'];
+      iconList = data['iconlist'];
+      setState(() {
+
+      });
     }
   }
 
@@ -48,23 +68,8 @@ class readPackState extends State<readPackWidget>{
         body:Center(
           child:Container(
             color: Color(0xFFf5f5f5),
-            child: FutureBuilder(
-              future: getPack(),
-              builder: (BuildContext context, AsyncSnapshot snapshot){
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.hasError) {
-//                // 请求失败，显示错误
-                    return Text("Error: ${snapshot.error}");
-                  } else {
-                    return PackWidget(iconList:snapshot.data);
-
-                  }
-                } else {
-                  // 请求未结束，显示loading
-                  return CircularProgressIndicator();
-                }
-              },
-            ),
+            child:
+              iconList.length>0?PackWidget(iconList:iconList):CircularProgressIndicator()
           )
 
         )
@@ -174,7 +179,6 @@ class PackState extends State<PackWidget>{
           onPressed: () async{
             String dir=(await getApplicationDocumentsDirectory()).path;
             for(var i=0;i<checkedList.length;i++){
-              print(checkedList[i]);
               File f=new File(checkedList[i]);
               var dir_bool=await f.exists();
               if(dir_bool){

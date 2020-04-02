@@ -30,7 +30,7 @@ dependencies:
   path_provider: ^1.6.5
   network_to_file_image: ^2.2.8
   share_extend: ^1.1.1
-  flutter_whatsapp_stickers: ^1.0.0+2
+  flutter_whatsapp_stickers: ^1.0.0+3
 
 
 
@@ -48,7 +48,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-
+  assets:
+    - icons/
   fonts:
    - family: our
      fonts:

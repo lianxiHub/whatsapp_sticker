@@ -8,3 +8,17 @@ import 'package:path_provider/path_provider.dart';
 //void main() async{
 //  _appDocsDir = await getApplicationDocumentsDirectory();
 //}
+
+
+Directory _appDocsDir;
+void getDir() async{
+  _appDocsDir = await getApplicationDocumentsDirectory();
+
+}
+
+File fileFromDocsDir(String filename) {
+  getDir();
+  String pathName = p.join(_appDocsDir.path, filename);
+  return File(pathName);
+}
+

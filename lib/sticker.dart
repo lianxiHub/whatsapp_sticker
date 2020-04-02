@@ -9,8 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:network_to_file_image/network_to_file_image.dart';
 import 'package:flutter_whatsapp_stickers/flutter_whatsapp_stickers.dart';
-//import 'main.dart';
-
+import 'premium.dart';
 
 
 const iconUrl = "http://necta.online/emoji/icons/";
@@ -21,9 +20,11 @@ class readStickerWidget extends StatefulWidget{
     Key key,
     this.packid,
     @required this.name,
+    this.pro
   }):super(key:key);
   String packid;
   String name;
+  String pro;
 
   @override
   readStickerState createState() => readStickerState();
@@ -32,9 +33,6 @@ class readStickerWidget extends StatefulWidget{
 
 
 File fileFromDocsDir(String filename)  {
-//  print(_appDocsDir);
-
-//  print(_appDocsDir);
   String pathName = p.join(_appDocsDir.path, filename);
   return File(pathName);
 }
@@ -43,29 +41,26 @@ class readStickerState extends State<readStickerWidget>{
   Future setDir () async{
     _appDocsDir =await getApplicationDocumentsDirectory();
   }
-
+  List iconList=[];
   void initState(){
     setDir();
+    getPack();
     print("initState");
   }
 
   void didChangeDependencies(){
-     print("didChangeDependencies");
+    print("didChangeDependencies");
   }
 
   void deactivate(){
-     print("deactivate");
+    print("deactivate");
   }
 
-  void dispose(){
+  void dispose() async{
     super.dispose();
-      print("dispose");
+    print("dispose");
+
   }
-
-//  void didUpdateWidget(){
-//    print("didUpdateWidget");
-//  }
-
 
   Future getPack() async{
     HttpClient httpClient = new HttpClient();
@@ -76,42 +71,32 @@ class readStickerState extends State<readStickerWidget>{
     httpClient.close();
 //    print(data);
     if(data['result'] == "OK"){
-      return data['iconlist'];
+      iconList = data['iconlist'];
+      setState(() {
+
+      });
+//      return data['iconlist'];
     }
 
   }
 
   @override
   Widget build(BuildContext context) {
-
     // TODO: implement build
     return new Scaffold(
         appBar: AppBar(
-          title: Text(widget.name),
+          title: Text(widget.name,
+          style: TextStyle(
+            fontWeight: FontWeight.w600
+          ),),
         ),
         body:Center(
             child:Container(
               color: Color(0xFFf5f5f5),
-              child: FutureBuilder(
-                future: getPack(),
-                builder: (BuildContext context, AsyncSnapshot snapshot){
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    if (snapshot.hasError) {
-//                // 请求失败，显示错误
-                      return Text("Error: ${snapshot.error}");
-                    } else {
-//                 print((snapshot.data));
-                      return StickerWidget(iconList:snapshot.data,
-                      packid:widget.packid,
-                      name:widget.name);
-
-                    }
-                  } else {
-                    // 请求未结束，显示loading
-                    return CircularProgressIndicator();
-                  }
-                },
-              ),
+              child: iconList.length>0?StickerWidget(iconList:iconList,
+                  packid:widget.packid,
+                  name:widget.name,
+                  pro:widget.pro) : CircularProgressIndicator()
             )
 
         )
@@ -125,10 +110,12 @@ class StickerWidget extends StatefulWidget{
     this.iconList,
     this.packid,
     this.name,
+    this.pro
   }):super(key:key);
   List iconList;
   String packid;
   String name;
+  String pro;
 
   @override
   StickerState createState() => StickerState();
@@ -140,18 +127,16 @@ class StickerState extends State<StickerWidget>{
     for(var i=0;i<widget.iconList.length;i++){
       widget.iconList[i]["checked"] = false;
     }
-
+    initPlatformState();
   }
 
-
   String _platformVersion = 'Unknown';
-
   bool _whatsAppInstalled = false;
   bool _whatsAppConsumerAppInstalled = false;
   bool _whatsAppSmbAppInstalled = false;
   bool _stickerPackInstalled = false;
   String platformVersion;
-
+  Directory deleteDir;
 
   WhatsAppStickers _waStickers;
 
@@ -189,9 +174,21 @@ class StickerState extends State<StickerWidget>{
       _whatsAppSmbAppInstalled = whatsAppSmbAppInstalled;
     });
   }
-  void dispose(){
+  void dispose() async{
     super.dispose();
+    if(deleteDir !=null){
+      if (deleteDir.existsSync()) {
+        List<FileSystemEntity> files = deleteDir.listSync();
+        if (files.length > 0) {
+          files.forEach((file) {
+            file.deleteSync();
+          });
+        }
+        deleteDir.deleteSync();
+      }
+    }
   }
+
   Map getJSONFile(){
     List stickers = [];
     for(var i=1;i<widget.iconList.length;i++){
@@ -221,9 +218,8 @@ class StickerState extends State<StickerWidget>{
     };
     return jsonfile;
   }
-
-   void  addToWhatsapp () async {
-     initPlatformState();
+  void addToWhatsapp () async {
+//     initPlatformState();
      String dir = (await getApplicationDocumentsDirectory()).path;
      Directory stickersDirectory = Directory("$dir/sticker_packs");
      if (!await stickersDirectory.exists()) {
@@ -235,7 +231,6 @@ class StickerState extends State<StickerWidget>{
      jsonFile.writeAsStringSync(content);
 
      var content2 = await jsonFile.readAsStringSync();
-//     print("content>>$content2");
      String url = stickersDirectory.path;
      String packid = widget.packid;
      Directory num = Directory("$url/$packid");
@@ -243,6 +238,7 @@ class StickerState extends State<StickerWidget>{
        await num.create();
 //       print("ID目录不存在,正在建立");
      }
+     deleteDir = num;
      String url2 = num.path;
      for(var i=0;i<widget.iconList.length;i++){
        String img = widget.iconList[i]["img"];
@@ -260,9 +256,6 @@ class StickerState extends State<StickerWidget>{
 //       print("编号文件夹里有");
 //       print(file.path);
      });
-     print(WhatsAppPackage.Consumer);
-     print(widget.packid);
-     print(widget.name);
 
      _waStickers.addStickerPack(
        packageName: WhatsAppPackage.Consumer,
@@ -272,11 +265,24 @@ class StickerState extends State<StickerWidget>{
      );
 
    }
+//  Widget getBtnWidget(){
+//    if(_whatsAppInstalled == true){
+//
+//    }else{
+//      return
+//    }
+
+//  }
 
   @override
   Widget build(BuildContext context) {
-    return
-      Column(
+    return Container(
+        constraints: BoxConstraints(
+//          minWidth: 180,
+          minHeight: MediaQuery.of(context).size.height,
+        ),
+
+      child: Stack(
         children: <Widget>[
           Container(
             height:500,
@@ -290,14 +296,14 @@ class StickerState extends State<StickerWidget>{
                   return Column(
                     children: <Widget>[
 //                      Image.network(iconUrl+f['img'],width:60),
-                    SizedBox(
-                      width:60,
-                      child: Image(image:
-                      NetworkToFileImage(
+                      SizedBox(
+                        width:60,
+                        child: Image(image:
+                        NetworkToFileImage(
 //                        debug: true,
-                          url: iconUrl+f['img'],
-                          file: fileFromDocsDir(f["img"]))),
-                    )
+                            url: iconUrl+f['img'],
+                            file: fileFromDocsDir(f["img"]))),
+                      )
 
 
                     ],
@@ -305,32 +311,75 @@ class StickerState extends State<StickerWidget>{
                 }).toList()
             ),
           ),
-          Container(
-            width:200,
-            height:50,
-            decoration: BoxDecoration(
-                color: Color(0xFFc3185e),
-                borderRadius: BorderRadius.all(Radius.circular(25))
-            ),
-            child: FlatButton(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25)
+          Positioned(
+            bottom:80,
+            left:(MediaQuery.of(context).size.width-220)/2,
+            right:(MediaQuery.of(context).size.width-220)/2,
+            child: new Container(
+              child: Container(
+                width:220,
+                height:50,
+                decoration: BoxDecoration(
+                    color: Color(0xFFc3185e),
+                    borderRadius: BorderRadius.all(Radius.circular(25))
+                ),
+                child: widget.pro == "0" ?
+                FlatButton(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25)
+                  ),
+    //            color: Colors.white,
+                  color:Color(0xFFc3185e) ,
+                  child: Text("ADD TO WHATSAPP",
+                      style:TextStyle(
+                          color: Colors.white
+                      )),
+                  onPressed: () async{
+                    addToWhatsapp();
+                  },
+
+                ) :
+                FlatButton(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25)
+                  ),
+                  color:Color(0xFFc3185e) ,
+                  child:Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Container(
+                        width:50,
+                        margin: EdgeInsets.only(),
+                        child: ImageIcon(
+                            AssetImage("icons/crown.png"),
+                            color:Colors.white
+                        ),
+                      ),
+                      Text("Premium",
+                          style:TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600
+                          )),
+                    ],
+                  ),
+
+                  onPressed: () async{
+                    Navigator.push( context,
+                        MaterialPageRoute(builder: (context) {
+                          return PremiumWidget();
+                        }));
+//                      addToWhatsapp();
+                  },
+
+                ),
               ),
-//            color: Colors.white,
-              color:Color(0xFFc3185e) ,
-              child: Text("ADD TO WHATSAPP",
-                  style:TextStyle(
-                      color: Colors.white
-                  )),
-              onPressed: () async{
-                addToWhatsapp();
-              },
-
             ),
-          ),
-
+          )
         ],
-      );
+      )
+    );
+
     throw UnimplementedError();
   }
 

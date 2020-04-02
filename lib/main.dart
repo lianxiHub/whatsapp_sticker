@@ -10,6 +10,8 @@ import 'series.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
+//import 'base.dart';
+//import 'package:flutter/rendering.dart';
 
 
 
@@ -40,7 +42,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Emoji Store',
       theme: ThemeData(
-          primaryColor:Colors.white,
+          primaryColor:Color(0xFFf7f7f7),
         fontFamily: 'our'
       ),
       home: MyHomePage(title: 'Emoji Store'),
@@ -57,13 +59,18 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List list;
+  List list =[];
   List banner;
   Map feature;
   List seriesList = [];
 
+  void initState(){
+    print("initState");
+    getHttp();
+  }
 
   Future getHttp() async{
+    print("getHttp");
     HttpClient httpClient = new HttpClient();
     //打开Http连接
     HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.online/emoji/exploreV1.php?country=CN"));
@@ -71,7 +78,23 @@ class _MyHomePageState extends State<MyHomePage> {
     Map data = jsonDecode(await response.transform(utf8.decoder).join());
     httpClient.close();
     if(data['result'] == "OK"){
-      return data['series'];
+      list = data['series'];
+//      print(list);
+      seriesList = [];
+      for(var i=0;i<list.length;i++){
+
+        if(list[i]["type"] == "banner"){
+          banner = list[i]["list"];
+        }else if(list[i]["type"] == 'feature'){
+          feature = list[i];
+        }else if(list[i]["type"] =="series"){
+          seriesList.add(list[i]);
+        }
+        print(seriesList);
+      }
+      setState(() {
+
+      });
     }
   }
 
@@ -80,65 +103,40 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(widget.title,
+        style: TextStyle(
+          fontWeight: FontWeight.w600
+        ),),
       ),
       body:
-      Center(
-        child: FutureBuilder(
-          future:getHttp(),
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            // 请求已结束
-            if (snapshot.connectionState == ConnectionState.done) {
-              if (snapshot.hasError) {
-//                // 请求失败，显示错误
-                return Text("Error: ${snapshot.error}");
-              } else {
-                seriesList = [];
-                for(var i=0;i<snapshot.data.length;i++){
-
-                  if(snapshot.data[i]["type"] == "banner"){
-                    banner = snapshot.data[i]["list"];
-                  }else if(snapshot.data[i]["type"] == 'feature'){
-                    feature = snapshot.data[i];
-                  }else if(snapshot.data[i]["type"] =="series"){
-                     seriesList.add(snapshot.data[i]);
-                  }
-                }
-
-
-//                // 请求成功，显示数据
-
-                return Container(
-                    decoration: BoxDecoration(color: Colors.black12),
-                    child: SingleChildScrollView(
-                      child: Column(
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: new Column(
-                          children: [
-                            SwiperWidget(banner:banner),
-                            FeatureWidget(feature:feature),
-                            SeriesWidget(seriesList: seriesList,)
-                          ],
-                        ),
-                      )
+      RefreshIndicator(
+        child: Center(
+            child: list.length>0 ? Container(
+              decoration: BoxDecoration(color: Color(0xffe6e6e6)),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(left:10,right:10),
+                      child: new Column(
+                        children: [
+                          SwiperWidget(banner:banner),
+                          FeatureWidget(feature:feature),
+                          SeriesWidget(seriesList: seriesList,)
+                        ],
+                      ),
+                    )
 //
-                    ],
-                  ),
+                  ],
+                ),
 
-                    ),
+              ),
 
-                );
+            ) : CircularProgressIndicator()
+        ),
+        onRefresh:getHttp,
+      )
 
-              }
-            } else {
-              // 请求未结束，显示loading
-              return CircularProgressIndicator();
-            }
-          },
-        )
-      ),
        // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
@@ -217,13 +215,6 @@ class FeatureState extends State<FeatureWidget>{
                      file: fileFromDocsDir(list[i]["img"]),
                      debug: false)) ,
                )
-
-//           Image(
-//               image: NetworkImage(
-//                   iconUrl+list[i]["img"]),
-//               width:50
-//
-//           ),
          ),
        );
     }
@@ -236,7 +227,7 @@ class FeatureState extends State<FeatureWidget>{
           child:Text("+" + num.toString(),
               style:TextStyle(
                   fontSize: 24,
-                  color: Colors.black12,
+                  color: Color(0xffcbcbcb),
 
               )),
         )
@@ -254,7 +245,8 @@ class FeatureState extends State<FeatureWidget>{
   Widget build(BuildContext context) {
     return GestureDetector(
       child: Container(
-          margin: EdgeInsets.only(top: 10.0),
+          margin: EdgeInsets.only(top: 0),
+          padding:EdgeInsets.only(top:5,bottom:5),
           decoration: BoxDecoration(color: Colors.white),
           child:Column(
               children:[
@@ -263,17 +255,35 @@ class FeatureState extends State<FeatureWidget>{
                   children: <Widget>[
                     Container(
                       margin: EdgeInsets.only(top: 10.0,bottom:10,right:20,),
-                      decoration: BoxDecoration(color: Color(0xFFc4165b)),
+                      decoration: BoxDecoration(
+                          color: Color(0xFF040404),
+                        borderRadius: BorderRadius.only(bottomRight: Radius.circular(5),topRight:Radius.circular(5))
+                      ),
                       child: new Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: new Text("feature",
-                            style:TextStyle(color:Colors.white)),
+                        padding: const EdgeInsets.only(right:10,left:2,top:2,bottom:2,),
+                        child:Row(
+                          children: <Widget>[
+                            Container(
+                              child: new Icon(Icons.grade,color:Colors.white,size:20),
+                              margin:EdgeInsets.only(right:5)
+                            )
+                            ,
+                          new Text("Featured",
+                            style:TextStyle(color:Colors.white,
+                            fontWeight:FontWeight.w600)),
+                          ],
+                        )
+
+//
                       ),
                     ),
                     Container(
                       margin: EdgeInsets.only(right:10),
                       child: Text(
                           widget.feature['packname'],
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600
+                        ),
 
                       ),
                     ),
@@ -281,8 +291,7 @@ class FeatureState extends State<FeatureWidget>{
                     Text(
                       widget.feature["author"],
                       style: TextStyle(
-
-                          color:Colors.black26,
+                          color:Color(0xff646464),
                           fontSize: 12
                       ),
                     )
@@ -305,7 +314,7 @@ class FeatureState extends State<FeatureWidget>{
         }else{
           Navigator.push( context,
               MaterialPageRoute(builder: (context) {
-                return readStickerWidget(packid:widget.feature["packid"],name:widget.feature["packname"],);
+                return readStickerWidget(packid:widget.feature["packid"],name:widget.feature["packname"],pro:widget.feature["pro"]);
               }));
         }
 
@@ -342,11 +351,13 @@ class SeriesState extends State<SeriesWidget>{
                Row(
                  mainAxisAlignment:MainAxisAlignment.spaceBetween,
                  children: <Widget>[
-                   Text(widget.seriesList[i]["seriesname"],),
+                   Text(widget.seriesList[i]["seriesname"],
+                   style: TextStyle(fontWeight: FontWeight.w600),),
                    GestureDetector(
                      child:Text("MORE",
                        style: TextStyle(
                            fontSize: 12,
+                         fontWeight: FontWeight.w600
                        ),) ,
                      onTap: (){
                        Navigator.push( context,
@@ -394,6 +405,7 @@ class SeriesState extends State<SeriesWidget>{
         Container(
           margin:EdgeInsets.only(right:num),
           child:Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               GestureDetector(
                 child: Container(
@@ -407,12 +419,12 @@ class SeriesState extends State<SeriesWidget>{
                   if(list[j]["whatsapp"] == "0"){
                     Navigator.push( context,
                         MaterialPageRoute(builder: (context) {
-                          return readPackWidget(packid:list[j]["packid"],name:list[j]["name"],);
+                          return readPackWidget(packid:list[j]["packid"],name:list[j]["name"],pro: list[j]["pro"],);
                         }));
                   }else{
                     Navigator.push( context,
                         MaterialPageRoute(builder: (context) {
-                          return readStickerWidget(packid:list[j]["packid"],name:list[j]["name"],);
+                          return readStickerWidget(packid:list[j]["packid"],name:list[j]["name"],pro: list[j]["pro"],);
                         }));
                   }
                 }
@@ -421,18 +433,51 @@ class SeriesState extends State<SeriesWidget>{
               Container(
                 margin: EdgeInsets.only(top:5),
                 child: Text(list[j]["name"],textAlign: TextAlign.left,style:TextStyle(
-                    color: Colors.black26,
+                    color: Colors.black,
                 )),
 
               ),
+              list[j]["pro"] == '0' ?
               Container(
+//                decoration: BoxDecoration(
+//                    color: Colors.green
+//                ),
                 margin: EdgeInsets.only(top:5),
                 child: Text(list[j]["author"],
                     textAlign: TextAlign.left,style:TextStyle(
-                      color: Colors.black26,
+                      color: Color(0xff686868),
+                        fontSize: 12,
 
                     )),
+              ) :
+              Container(
+//                decoration: BoxDecoration(
+//                  color: Colors.green
+//                ),
+//                height:20,
+                margin: EdgeInsets.only(top:0),
+                child: Row(
+                  children: <Widget>[
+                    Container(
+                      width:20,
+                      margin: EdgeInsets.only(right:2),
+                      child: ImageIcon(
+                          AssetImage("icons/crown.png"),
+                          color:Color(0xffE91E63)
+                      ),
+                    ),
+
+                    Text("Premium",
+                        textAlign: TextAlign.left,style:TextStyle(
+                          color: Color(0xffE91E63),
+                          fontSize: 13,
+
+                        )),
+                  ],
+                )
+
               )
+
             ],
           ) ,
         )
@@ -455,12 +500,6 @@ class SeriesState extends State<SeriesWidget>{
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: <Widget>[
-
-//            Image.network(
-//                iconUrl+iconList[0]["img"],
-//                width:40
-//
-//            ),
             SizedBox(
               width:40,
               child:Image(image:
@@ -477,11 +516,6 @@ class SeriesState extends State<SeriesWidget>{
                     file: fileFromDocsDir(iconList[1]["img"]),
                     debug: false))
             ),
-//            Image.network(
-//                iconUrl+iconList[1]["img"],
-//                width:40
-//
-//            ),
           ],
         ),
         Row(
@@ -503,16 +537,6 @@ class SeriesState extends State<SeriesWidget>{
                     file: fileFromDocsDir(iconList[3]["img"]),
                     debug: false))
             ),
-//            Image.network(
-//                iconUrl+iconList[2]["img"],
-//                width:40
-//
-//            ),
-//            Image.network(
-//                iconUrl+iconList[3]["img"],
-//                width:40
-//
-//            ),
           ],
         ),
       ],

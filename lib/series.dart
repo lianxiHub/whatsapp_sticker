@@ -39,7 +39,10 @@ class readSeriesState extends State<readSeriesWidget>{
   Widget build(BuildContext context) {
     return new Scaffold(
       appBar: AppBar(
-        title: Text(widget.name),
+        title: Text(widget.name,
+        style: TextStyle(
+          fontWeight: FontWeight.w600
+        ),),
       ),
       body:
         Container(
@@ -109,13 +112,13 @@ class ListState extends State<ListWidget>{
                           margin:EdgeInsets.only(right:15,left:5,),
                           child: Text(widget.packlist[i]["name"],style:TextStyle(
 
-                              color: Colors.black54
+                              fontWeight: FontWeight.w600
                           )),
                         ),
 
                         Text(widget.packlist[i]["author"],style:TextStyle(
 
-                            color:Colors.black26,
+                            color:Color(0xff646464),
                             fontSize: 12
                         ))
                       ],
@@ -169,8 +172,8 @@ class ListState extends State<ListWidget>{
       list.add(
         Text("+"+(iconlist.length-4).toString(),
             style:TextStyle(
-                fontSize: 24,
-                color: Colors.black12
+              fontSize: 24,
+              color: Color(0xffcbcbcb),
             )),
       );
     }
