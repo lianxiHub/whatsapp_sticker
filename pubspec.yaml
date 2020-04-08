@@ -31,6 +31,7 @@ dependencies:
   network_to_file_image: ^2.2.8
   share_extend: ^1.1.1
   flutter_whatsapp_stickers: ^1.0.0+3
+  launch_review: ^2.0.0
 
 
 

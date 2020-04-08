@@ -10,6 +10,7 @@ import 'series.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
+import 'package:launch_review/launch_review.dart';
 //import 'base.dart';
 //import 'package:flutter/rendering.dart';
 
@@ -174,6 +175,29 @@ class SwiperState extends State<SwiperWidget>{
         pagination: new SwiperPagination(),
         control: new SwiperControl(),
         autoplay: true,
+        onTap:(index){
+          switch (widget.banner[index]["clicktype"]){
+            case "1":
+              Navigator.push( context,
+                  MaterialPageRoute(builder: (context) {
+                    return readPackWidget(packid:widget.banner[index]["clickcontent"],name:"",);
+                  }));
+              break;
+            case "2":
+              Navigator.push( context,
+                  MaterialPageRoute(builder: (context) {
+                    return readStickerWidget(packid:widget.banner[index]["clickcontent"],name:"");
+                  }));
+              break;
+            case "3":
+              print(widget.banner[index]["clickcontent"]);
+              LaunchReview.launch(androidAppId: widget.banner[index]["clickcontent"],
+                  );
+              break;
+
+          };
+
+        }
       ),
     );
     throw UnimplementedError();

@@ -139,8 +139,9 @@ class StickerState extends State<StickerWidget>{
   Directory deleteDir;
 
   WhatsAppStickers _waStickers;
-
+  bool hasDone = false;
   Future<void> initPlatformState() async {
+
     _waStickers= WhatsAppStickers();
     try {
       platformVersion = await WhatsAppStickers.platformVersion;
@@ -168,6 +169,7 @@ class StickerState extends State<StickerWidget>{
     await _waStickers.isStickerPackInstalled(widget.packid);
 
     setState(() {
+      hasDone = true;
       _platformVersion = platformVersion;
       _whatsAppInstalled = whatsAppInstalled;
       _whatsAppConsumerAppInstalled = whatsAppConsumerAppInstalled;
@@ -176,6 +178,7 @@ class StickerState extends State<StickerWidget>{
   }
   void dispose() async{
     super.dispose();
+    //将增加的存放图片的文件夹删除
     if(deleteDir !=null){
       if (deleteDir.existsSync()) {
         List<FileSystemEntity> files = deleteDir.listSync();
@@ -265,18 +268,150 @@ class StickerState extends State<StickerWidget>{
      );
 
    }
-//  Widget getBtnWidget(){
-//    if(_whatsAppInstalled == true){
-//
-//    }else{
-//      return
-//    }
+  Widget getBtnWidget(){
+    if(hasDone == true){
+      if(_stickerPackInstalled == false){
+        if(widget.pro == '1'){
+          return
+            Positioned(
+              bottom:80,
+              left:(MediaQuery.of(context).size.width-220)/2,
+              right:(MediaQuery.of(context).size.width-220)/2,
+              child: new Container(
+                child: Container(
+                    width:220,
+                    height:50,
+                    decoration: BoxDecoration(
+                        color: Color(0xFFc3185e),
+                        borderRadius: BorderRadius.all(Radius.circular(25))
+                    ),
+                    child: FlatButton(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25)
+                      ),
+                      color:Color(0xFFc3185e) ,
+                      child:Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Container(
+                            width:50,
+                            margin: EdgeInsets.only(),
+                            child: ImageIcon(
+                                AssetImage("icons/crown.png"),
+                                color:Colors.white
+                            ),
+                          ),
+                          Text("Premium",
+                              style:TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600
+                              )),
+                        ],
+                      ),
 
-//  }
+                      onPressed: () async{
+                        Navigator.push( context,
+                            MaterialPageRoute(builder: (context) {
+                              return PremiumWidget();
+                            }));
+//                      addToWhatsapp();
+                      },
+
+                    )
+
+
+                ),
+              ),
+            );
+
+        }else{
+          return
+            Positioned(
+              bottom:80,
+              left:(MediaQuery.of(context).size.width-220)/2,
+              right:(MediaQuery.of(context).size.width-220)/2,
+              child: new Container(
+                child: Container(
+                    width:220,
+                    height:50,
+                    decoration: BoxDecoration(
+                        color: Color(0xFFc3185e),
+                        borderRadius: BorderRadius.all(Radius.circular(25))
+                    ),
+                    child: FlatButton(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25)
+                      ),
+                      //            color: Colors.white,
+                      color:Color(0xFFc3185e) ,
+                      child: Text("ADD TO WHATSAPP",
+                          style:TextStyle(
+                              color: Colors.white
+                          )),
+                      onPressed: () async{
+                        addToWhatsapp();
+                      },
+
+                    )
+
+
+                ),
+              ),
+            );
+
+        }
+      }else{
+        return Positioned(
+            bottom: 80,
+            left:(MediaQuery.of(context).size.width-185)/2,
+            right:(MediaQuery.of(context).size.width-185)/2,
+            child:
+            Container(
+              width:185,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Icon(Icons.done),
+                  Text.rich(TextSpan(
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16
+                      ),
+                      children: [
+                        TextSpan(
+                          text:" Added to ",
+
+                        ),
+                        TextSpan(
+                            text: "WhatsApp",
+                            style: TextStyle(
+                              color:Color(0xffE91E63),
+
+                            )
+                        )
+                      ]
+                  )),
+
+
+                ],
+              ),
+            )
+
+        );
+
+      }
+    }else{
+      return Text("");
+    }
+
+
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return
+      Container(
         constraints: BoxConstraints(
 //          minWidth: 180,
           minHeight: MediaQuery.of(context).size.height,
@@ -300,7 +435,7 @@ class StickerState extends State<StickerWidget>{
                         width:60,
                         child: Image(image:
                         NetworkToFileImage(
-//                        debug: true,
+                            debug: true,
                             url: iconUrl+f['img'],
                             file: fileFromDocsDir(f["img"]))),
                       )
@@ -311,76 +446,11 @@ class StickerState extends State<StickerWidget>{
                 }).toList()
             ),
           ),
-          Positioned(
-            bottom:80,
-            left:(MediaQuery.of(context).size.width-220)/2,
-            right:(MediaQuery.of(context).size.width-220)/2,
-            child: new Container(
-              child: Container(
-                width:220,
-                height:50,
-                decoration: BoxDecoration(
-                    color: Color(0xFFc3185e),
-                    borderRadius: BorderRadius.all(Radius.circular(25))
-                ),
-                child: widget.pro == "0" ?
-                FlatButton(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25)
-                  ),
-    //            color: Colors.white,
-                  color:Color(0xFFc3185e) ,
-                  child: Text("ADD TO WHATSAPP",
-                      style:TextStyle(
-                          color: Colors.white
-                      )),
-                  onPressed: () async{
-                    addToWhatsapp();
-                  },
+          getBtnWidget()
 
-                ) :
-                FlatButton(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25)
-                  ),
-                  color:Color(0xFFc3185e) ,
-                  child:Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Container(
-                        width:50,
-                        margin: EdgeInsets.only(),
-                        child: ImageIcon(
-                            AssetImage("icons/crown.png"),
-                            color:Colors.white
-                        ),
-                      ),
-                      Text("Premium",
-                          style:TextStyle(
-                              fontSize: 16,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600
-                          )),
-                    ],
-                  ),
-
-                  onPressed: () async{
-                    Navigator.push( context,
-                        MaterialPageRoute(builder: (context) {
-                          return PremiumWidget();
-                        }));
-//                      addToWhatsapp();
-                  },
-
-                ),
-              ),
-            ),
-          )
         ],
       )
     );
-
-    throw UnimplementedError();
   }
 
   Future<void> _listener(StickerPackResult action, bool result,
@@ -388,6 +458,11 @@ class StickerState extends State<StickerWidget>{
     print("_listener");
     print(action);
     print(result);
+    if(action == StickerPackResult.ADD_SUCCESSFUL){
+      setState(() {
+        _stickerPackInstalled = true;
+      });
+    }
     print(error);
   }
 }

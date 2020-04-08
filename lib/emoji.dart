@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
-//import 'base.dart';
 import 'package:share_extend/share_extend.dart';
 import 'package:path/path.dart' as p;
 
