@@ -5,7 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'emoji.dart';
-import 'sticker.dart';
+//import 'sticker.dart';
 
 
 const iconUrl = "http://necta.online/emoji/icons/";
@@ -13,16 +13,21 @@ class readSeriesWidget extends StatefulWidget{
   readSeriesWidget({
     Key key,
     this.seriesid,
-    @required this.name,
   }):super(key:key);
   String seriesid;
-  String name;
 
   @override
   readSeriesState createState() => readSeriesState();
 }
 
 class readSeriesState extends State<readSeriesWidget>{
+  bool isOver = false;
+  String name = "";
+  List packList;
+  void initState(){
+    getSeries();
+  }
+
   Future getSeries() async{
     HttpClient httpClient = new HttpClient();
     //打开Http连接
@@ -31,7 +36,13 @@ class readSeriesState extends State<readSeriesWidget>{
     Map data = jsonDecode(await response.transform(utf8.decoder).join());
     httpClient.close();
     if(data['result'] == "OK"){
-      return data['packlist'];
+      print(data);
+      packList = data['packlist'];
+      name = data['name'];
+      setState(() {
+        isOver = true;
+      });
+
     }
   }
 
@@ -39,41 +50,28 @@ class readSeriesState extends State<readSeriesWidget>{
   Widget build(BuildContext context) {
     return new Scaffold(
       appBar: AppBar(
-        title: Text(widget.name,
+        title: Text(name,
         style: TextStyle(
           fontWeight: FontWeight.w600
         ),),
       ),
-      body:
+      body:isOver?
         Container(
           constraints: BoxConstraints(
             minHeight: MediaQuery.of(context).size.height,
           ),
           color: Color(0xFFf5f5f5),
           child:
-          FutureBuilder(
-              future:getSeries(),
-              builder: (BuildContext context, AsyncSnapshot snapshot){
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.hasError) {
-//                // 请求失败，显示错误
-                    return Text("Error: ${snapshot.error}");
-                  } else {
-                    return Padding(
-                      padding: EdgeInsets.all(10),
-                      child: ListWidget(packlist:snapshot.data),
-                    );
+            Padding(
+            padding: EdgeInsets.all(10),
+                child: ListWidget(packlist:packList),
+             )
+        )
+          :
+          Center(
+            child: CircularProgressIndicator(),
+          )
 
-                  }
-                } else {
-                  // 请求未结束，显示loading
-                  return Center(
-                    child:CircularProgressIndicator() ,
-                  );
-                }
-              }
-          ),
-        ),
     );
     throw UnimplementedError();
   }
@@ -129,17 +127,11 @@ class ListState extends State<ListWidget>{
                 ],
               ),
               onTap: (){
-                if(widget.packlist[i]["whatsapp"] == "0"){
-                  Navigator.push( context,
-                      MaterialPageRoute(builder: (context) {
-                        return readPackWidget(packid:widget.packlist[i]["packid"],name:widget.packlist[i]["name"],);
-                      }));
-                }else{
-                  Navigator.push( context,
-                      MaterialPageRoute(builder: (context) {
-                        return readStickerWidget(packid:widget.packlist[i]["packid"],name:widget.packlist[i]["name"],);
-                      }));
-                }
+                Navigator.push( context,
+                    MaterialPageRoute(builder: (context) {
+                      return readPackWidget(packid:widget.packlist[i]["packid"]);
+                    }));
+
               },
             )
 

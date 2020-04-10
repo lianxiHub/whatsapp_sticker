@@ -75,7 +75,6 @@ class readStickerState extends State<readStickerWidget>{
       setState(() {
 
       });
-//      return data['iconlist'];
     }
 
   }
@@ -148,15 +147,6 @@ class StickerState extends State<StickerWidget>{
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
-//     _waStickers
-
-
-    // Platform messages may fail, so we use a try/catch PlatformException.
-
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
     if (!mounted) return;
 
     bool whatsAppInstalled = await WhatsAppStickers.isWhatsAppInstalled;

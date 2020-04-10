@@ -5,7 +5,7 @@ import 'dart:ui';
 import 'dart:io';
 import 'dart:convert';
 import 'emoji.dart';
-import 'sticker.dart';
+//import 'sticker.dart';
 import 'series.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -180,13 +180,13 @@ class SwiperState extends State<SwiperWidget>{
             case "1":
               Navigator.push( context,
                   MaterialPageRoute(builder: (context) {
-                    return readPackWidget(packid:widget.banner[index]["clickcontent"],name:"",);
+                    return readPackWidget(packid:widget.banner[index]["clickcontent"]);
                   }));
               break;
             case "2":
               Navigator.push( context,
                   MaterialPageRoute(builder: (context) {
-                    return readStickerWidget(packid:widget.banner[index]["clickcontent"],name:"");
+                    return readSeriesWidget(seriesid:widget.banner[index]["clickcontent"]);
                   }));
               break;
             case "3":
@@ -330,17 +330,10 @@ class FeatureState extends State<FeatureWidget>{
           )
       ),
       onTap: (){
-        if(widget.feature["whatsapp"] == "0"){
-          Navigator.push( context,
-              MaterialPageRoute(builder: (context) {
-                return readPackWidget(packid:widget.feature["packid"],name:widget.feature["packname"],);
-              }));
-        }else{
-          Navigator.push( context,
-              MaterialPageRoute(builder: (context) {
-                return readStickerWidget(packid:widget.feature["packid"],name:widget.feature["packname"],pro:widget.feature["pro"]);
-              }));
-        }
+        Navigator.push( context,
+            MaterialPageRoute(builder: (context) {
+              return readPackWidget(packid:widget.feature["packid"],);
+            }));
 
       },
     );
@@ -386,7 +379,7 @@ class SeriesState extends State<SeriesWidget>{
                      onTap: (){
                        Navigator.push( context,
                            MaterialPageRoute(builder: (context) {
-                             return readSeriesWidget(seriesid:widget.seriesList[i]["seriesid"],name:widget.seriesList[i]["seriesname"],);
+                             return readSeriesWidget(seriesid:widget.seriesList[i]["seriesid"]);
                            }));
                      },
 
@@ -440,17 +433,11 @@ class SeriesState extends State<SeriesWidget>{
                     child: buildGridView(list[j]["iconlist"])
                 ),
                 onTap: (){
-                  if(list[j]["whatsapp"] == "0"){
-                    Navigator.push( context,
-                        MaterialPageRoute(builder: (context) {
-                          return readPackWidget(packid:list[j]["packid"],name:list[j]["name"],pro: list[j]["pro"],);
-                        }));
-                  }else{
-                    Navigator.push( context,
-                        MaterialPageRoute(builder: (context) {
-                          return readStickerWidget(packid:list[j]["packid"],name:list[j]["name"],pro: list[j]["pro"],);
-                        }));
-                  }
+                  Navigator.push( context,
+                      MaterialPageRoute(builder: (context) {
+                        return readPackWidget(packid:list[j]["packid"]);
+                      }));
+
                 }
               ),
 
