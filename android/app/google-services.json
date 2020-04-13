@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "320633450806",
+    "firebase_url": "https://emoji-ed2fa.firebaseio.com",
+    "project_id": "emoji-ed2fa",
+    "storage_bucket": "emoji-ed2fa.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:320633450806:android:c5dc47dc70d8cd2ab4c397",
+        "android_client_info": {
+          "package_name": "com.emoji.store"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "320633450806-nanltb49h4pb524iomtfpbm4lnqkhmav.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiEg4vBbvkdbMzVRNoTJcreha0eoyctgw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "320633450806-nanltb49h4pb524iomtfpbm4lnqkhmav.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

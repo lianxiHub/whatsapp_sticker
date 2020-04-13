@@ -5,16 +5,16 @@ import 'dart:ui';
 import 'dart:io';
 import 'dart:convert';
 import 'emoji.dart';
-//import 'sticker.dart';
 import 'series.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
 import 'package:launch_review/launch_review.dart';
-//import 'base.dart';
 //import 'package:flutter/rendering.dart';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 
+final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
 
 void main() async{
 //  debugPaintSizeEnabled = true;
@@ -25,6 +25,7 @@ void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   _appDocsDir = await getApplicationDocumentsDirectory();
   runApp(MyApp());
+
 }
 
 const iconUrl = "http://necta.online/emoji/icons/";
@@ -65,9 +66,75 @@ class _MyHomePageState extends State<MyHomePage> {
   Map feature;
   List seriesList = [];
 
+  static Future<dynamic> myBackgroundMessageHandler( Map<String, dynamic> message) {
+    showDialog<bool>(
+      builder: (context) {
+        return AlertDialog(
+          title: Text("提示"),
+          content: Text("background"),
+
+        );
+      },
+    );
+    if (message.containsKey('data')) {
+      // Handle data message
+      final dynamic data = message['data'];
+    }
+
+    if (message.containsKey('notification')) {
+      // Handle notification message
+      final dynamic notification = message['notification'];
+    }
+
+    // Or do other work.
+  }
+
+
   void initState(){
     print("initState");
     getHttp();
+    _firebaseMessaging.configure(
+      onMessage: (Map<String, dynamic> message) async {
+        print("onMessage: $message");
+        showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text("提示"),
+              content: Text("onMessage"),
+
+            );
+          },
+        );
+      },
+      onBackgroundMessage: myBackgroundMessageHandler,
+      onLaunch: (Map<String, dynamic> message) async {
+        print("onLaunch: $message");
+        showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text("提示"),
+              content: Text("onLaunch"),
+
+            );
+          },
+        );
+      },
+      onResume: (Map<String, dynamic> message) async {
+        print("onResume: $message");
+        showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text("提示"),
+              content: Text("onResume"),
+
+            );
+          },
+        );
+      },
+    );
   }
 
   Future getHttp() async{

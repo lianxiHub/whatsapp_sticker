@@ -32,7 +32,7 @@ dependencies:
   share_extend: ^1.1.1
   flutter_whatsapp_stickers: ^1.0.0+3
   launch_review: ^2.0.0
-
+  firebase_messaging: ^6.0.13
 
 
 dev_dependencies:
