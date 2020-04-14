@@ -10,11 +10,40 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:network_to_file_image/network_to_file_image.dart';
 import 'package:launch_review/launch_review.dart';
-//import 'package:flutter/rendering.dart';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:async';
+import 'package:rxdart/subjects.dart';
 
 final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+FlutterLocalNotificationsPlugin();
+
+// Streams are created so that app can respond to notification-related events since the plugin is initialised in the `main` function
+final BehaviorSubject<ReceivedNotification> didReceiveLocalNotificationSubject =
+BehaviorSubject<ReceivedNotification>();
+
+final BehaviorSubject<String> selectNotificationSubject =
+BehaviorSubject<String>();
+
+NotificationAppLaunchDetails notificationAppLaunchDetails;
+
+class ReceivedNotification {
+  final int id;
+  final String title;
+  final String body;
+  final String payload;
+
+  ReceivedNotification({
+    @required this.id,
+    @required this.title,
+    @required this.body,
+    @required this.payload,
+  });
+}
+
+
 
 void main() async{
 //  debugPaintSizeEnabled = true;
@@ -23,6 +52,34 @@ void main() async{
 //  debugRepaintRainbowEnabled = true;
 
   WidgetsFlutterBinding.ensureInitialized();
+//
+  notificationAppLaunchDetails =
+  await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+//
+  var initializationSettingsAndroid = AndroidInitializationSettings('app_icon');
+//  // Note: permissions aren't requested here just to demonstrate that can be done later using the `requestPermissions()` method
+//  // of the `IOSFlutterLocalNotificationsPlugin` class
+  var initializationSettingsIOS = IOSInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+      onDidReceiveLocalNotification:
+          (int id, String title, String body, String payload) async {
+        didReceiveLocalNotificationSubject.add(ReceivedNotification(
+            id: id, title: title, body: body, payload: payload));
+      });
+  var initializationSettings = InitializationSettings(
+      initializationSettingsAndroid, initializationSettingsIOS);
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings,
+      onSelectNotification: (String payload) async {
+        if (payload != null) {
+          debugPrint('notification payload: ' + payload);
+        }
+        selectNotificationSubject.add(payload);
+      });
+
+
   _appDocsDir = await getApplicationDocumentsDirectory();
   runApp(MyApp());
 
@@ -65,80 +122,97 @@ class _MyHomePageState extends State<MyHomePage> {
   List banner;
   Map feature;
   List seriesList = [];
+  String mtype;
+  String mvalue;
 
-  static Future<dynamic> myBackgroundMessageHandler( Map<String, dynamic> message) {
-    showDialog<bool>(
-      builder: (context) {
-        return AlertDialog(
-          title: Text("提示"),
-          content: Text("background"),
 
-        );
-      },
-    );
-    if (message.containsKey('data')) {
-      // Handle data message
-      final dynamic data = message['data'];
-    }
+  Future _showNotification(message) async {
+    print("showNotifation");
+    String title = message["notification"]["title"];
+    String body = message["notification"]["body"];
 
-    if (message.containsKey('notification')) {
-      // Handle notification message
-      final dynamic notification = message['notification'];
-    }
+    setState(() {
+      mtype = message["data"]["mtype"];
+      mvalue = message["data"]["mvalue"];
+    });
 
-    // Or do other work.
+    print(message);
+    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        'your channel id', 'your channel name', 'your channel description',
+        importance: Importance.Max, priority: Priority.High, ticker: 'ticker');
+    var iOSPlatformChannelSpecifics = IOSNotificationDetails();
+    var platformChannelSpecifics = NotificationDetails(
+        androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.show(
+        0, title, body, platformChannelSpecifics,
+        payload: 'item x');
   }
-
+  void dispose(){
+    print("dispose");
+  }
 
   void initState(){
     print("initState");
+    super.initState();
     getHttp();
+    _firebaseMessaging.getToken().then((String token) {
+      assert(token != null);
+      print("token>>$token");
+    });
+
+    _requestIOSPermissions();
+    _configureSelectNotificationSubject();
+
     _firebaseMessaging.configure(
       onMessage: (Map<String, dynamic> message) async {
         print("onMessage: $message");
-        showDialog<bool>(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text("提示"),
-              content: Text("onMessage"),
-
-            );
-          },
-        );
+        await _showNotification(message);
       },
-      onBackgroundMessage: myBackgroundMessageHandler,
       onLaunch: (Map<String, dynamic> message) async {
         print("onLaunch: $message");
-        showDialog<bool>(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text("提示"),
-              content: Text("onLaunch"),
-
-            );
-          },
-        );
+        route(message["data"]["mtype"],message["data"]["mvalue"]);
       },
       onResume: (Map<String, dynamic> message) async {
         print("onResume: $message");
-        showDialog<bool>(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text("提示"),
-              content: Text("onResume"),
-
-            );
-          },
-        );
+        route(message["data"]["mtype"],message["data"]["mvalue"]);
       },
     );
   }
 
+  Future route(mtype,mvalue) async{
+    if(mtype=='1'){
+      await Navigator.push( context,
+          MaterialPageRoute(builder: (context) {
+            return readSeriesWidget(seriesid:mvalue);
+          }));
+    }else if(mtype == "2"){
+      await Navigator.push( context,
+          MaterialPageRoute(builder: (context) {
+            return readPackWidget(packid:mvalue);
+          }));
+    }
+  }
+
+  void _requestIOSPermissions() {
+    flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  }
+
+  void _configureSelectNotificationSubject() {
+    selectNotificationSubject.stream.listen((String payload) async {
+      await route(mtype,mvalue);
+      setState(() {
+        mtype = '0';
+      });
+    });
+  }
   Future getHttp() async{
-    print("getHttp");
     HttpClient httpClient = new HttpClient();
     //打开Http连接
     HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.online/emoji/exploreV1.php?country=CN"));
@@ -147,7 +221,7 @@ class _MyHomePageState extends State<MyHomePage> {
     httpClient.close();
     if(data['result'] == "OK"){
       list = data['series'];
-//      print(list);
+
       seriesList = [];
       for(var i=0;i<list.length;i++){
 
@@ -158,14 +232,13 @@ class _MyHomePageState extends State<MyHomePage> {
         }else if(list[i]["type"] =="series"){
           seriesList.add(list[i]);
         }
-        print(seriesList);
+
       }
       setState(() {
 
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -257,7 +330,6 @@ class SwiperState extends State<SwiperWidget>{
                   }));
               break;
             case "3":
-              print(widget.banner[index]["clickcontent"]);
               LaunchReview.launch(androidAppId: widget.banner[index]["clickcontent"],
                   );
               break;
@@ -424,7 +496,6 @@ class SeriesWidget extends StatefulWidget{
 class SeriesState extends State<SeriesWidget>{
   Widget buildSeries(){
     List<Widget> item = [];
-//    print(widget.seriesList);
      for(var i=0;i<(widget.seriesList).length;i++){
        item.add(
          Container(padding: EdgeInsets.only(top:15,left:15,right:10),
@@ -474,7 +545,6 @@ class SeriesState extends State<SeriesWidget>{
   }
 
   Widget buildListView(list){
-//    print(list);
     List<Widget> itemj = [];
     int limit;
     if(list.length>6){
@@ -627,4 +697,5 @@ class SeriesState extends State<SeriesWidget>{
     return buildSeries();
   }
 }
+
 
