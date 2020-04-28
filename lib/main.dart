@@ -14,19 +14,20 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:async';
 import 'package:rxdart/subjects.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'consumable_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:country_codes/country_codes.dart';
+import 'package:flutter/services.dart';
 
 final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
-
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 FlutterLocalNotificationsPlugin();
-
 // Streams are created so that app can respond to notification-related events since the plugin is initialised in the `main` function
 final BehaviorSubject<ReceivedNotification> didReceiveLocalNotificationSubject =
 BehaviorSubject<ReceivedNotification>();
-
 final BehaviorSubject<String> selectNotificationSubject =
 BehaviorSubject<String>();
-
 NotificationAppLaunchDetails notificationAppLaunchDetails;
 
 class ReceivedNotification {
@@ -43,19 +44,20 @@ class ReceivedNotification {
   });
 }
 
-
-
 void main() async{
 //  debugPaintSizeEnabled = true;
 //  debugPaintPointersEnabled = true;
 //  debugPaintLayerBordersEnabled = true;
 //  debugRepaintRainbowEnabled = true;
 
+  InAppPurchaseConnection.enablePendingPurchases();
+
+
   WidgetsFlutterBinding.ensureInitialized();
-//
+
+
   notificationAppLaunchDetails =
   await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
-//
   var initializationSettingsAndroid = AndroidInitializationSettings('app_icon');
 //  // Note: permissions aren't requested here just to demonstrate that can be done later using the `requestPermissions()` method
 //  // of the `IOSFlutterLocalNotificationsPlugin` class
@@ -82,6 +84,7 @@ void main() async{
 
   _appDocsDir = await getApplicationDocumentsDirectory();
   runApp(MyApp());
+
 
 }
 
@@ -117,6 +120,16 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
+final InAppPurchaseConnection _connection = InAppPurchaseConnection.instance;
+List<ProductDetails> _products = [];
+const String _kConsumableId = 'consumable';
+const bool kAutoConsume = true;
+const List<String> _kProductIds = <String>[
+  "allpacks"
+];
+StreamSubscription<List<PurchaseDetails>> _subscription;
+
+
 class _MyHomePageState extends State<MyHomePage> {
   List list =[];
   List banner;
@@ -136,7 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
       mvalue = message["data"]["mvalue"];
     });
 
-    print(message);
+//    print(message);
     var androidPlatformChannelSpecifics = AndroidNotificationDetails(
         'your channel id', 'your channel name', 'your channel description',
         importance: Importance.Max, priority: Priority.High, ticker: 'ticker');
@@ -147,17 +160,97 @@ class _MyHomePageState extends State<MyHomePage> {
         0, title, body, platformChannelSpecifics,
         payload: 'item x');
   }
-  void dispose(){
-    print("dispose");
+
+  Future<void> initStoreInfo() async {
+    final bool isAvailable = await _connection.isAvailable();
+    if (!isAvailable) {
+      print("not avaible");
+      setState(() {
+        _products = [];
+      });
+      return;
+    }
+
+    ProductDetailsResponse productDetailResponse =
+    await _connection.queryProductDetails(_kProductIds.toSet());
+
+    if (productDetailResponse.error != null) {
+      print("error");
+      setState(() {
+        _products = productDetailResponse.productDetails;
+      });
+      return;
+    }
+
+    if (productDetailResponse.productDetails.isEmpty) {
+      print("isempty");
+      setState(() {
+        _products = productDetailResponse.productDetails;
+      });
+      return;
+    }
+
+    final QueryPurchaseDetailsResponse purchaseResponse =
+    await _connection.queryPastPurchases();
+    if (purchaseResponse.error != null) {
+      // handle query past purchase error..
+    }
+
+
+    final List<PurchaseDetails> verifiedPurchases = [];
+    for (PurchaseDetails purchase in purchaseResponse.pastPurchases) {
+      if (await _verifyPurchase(purchase)) {
+        verifiedPurchases.add(purchase);
+      }
+    }
+    Map<String, PurchaseDetails> purchases =
+    Map.fromEntries(verifiedPurchases.map((PurchaseDetails purchase) {
+      if (purchase.pendingCompletePurchase) {
+        InAppPurchaseConnection.instance.completePurchase(purchase);
+      }
+      return MapEntry<String, PurchaseDetails>(purchase.productID, purchase);
+    }));
+
+    PurchaseDetails previousPurchase = purchases["allpacks"];
+    final prefs = await SharedPreferences.getInstance();
+    if(previousPurchase != null){
+      prefs.setBool('purchse', true);
+      print("已经购买");
+    }else{
+      prefs.setBool('purchse', false);
+      print("没有购买");
+    }
+
+    List<String> consumables = await ConsumableStore.load();
+    setState(() {
+      _products = productDetailResponse.productDetails;
+    });
   }
 
+
+  Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) {
+    // IMPORTANT!! Always verify a purchase before delivering the product.
+    // For the purpose of an example, we directly return true.
+    return Future<bool>.value(true);
+  }
+
+
+
   void initState(){
-    print("initState");
+//    print("initState");
+
     super.initState();
+//    final Stream purchaseUpdates =
+//        InAppPurchaseConnection.instance.purchaseUpdatedStream;
+//    _subscription = purchaseUpdates.listen((purchases) {
+//      _handlePurchaseUpdates(purchases);
+//    });
+
+    initStoreInfo();
     getHttp();
     _firebaseMessaging.getToken().then((String token) {
       assert(token != null);
-      print("token>>$token");
+//      print("token>>$token");
     });
 
     _requestIOSPermissions();
@@ -193,29 +286,15 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void _requestIOSPermissions() {
-    flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-  }
-
-  void _configureSelectNotificationSubject() {
-    selectNotificationSubject.stream.listen((String payload) async {
-      await route(mtype,mvalue);
-      setState(() {
-        mtype = '0';
-      });
-    });
-  }
   Future getHttp() async{
+    await CountryCodes.init();
+
+    final Locale deviceLocale = CountryCodes.getDeviceLocale();
+    //print(deviceLocale.languageCode); // Displays en
+    print(deviceLocale.countryCode);
     HttpClient httpClient = new HttpClient();
     //打开Http连接
-    HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.online/emoji/exploreV1.php?country=CN"));
+    HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.online/emoji/exploreV1.php?country=${deviceLocale.countryCode}"));
     HttpClientResponse response = await request.close();
     Map data = jsonDecode(await response.transform(utf8.decoder).join());
     httpClient.close();
@@ -280,6 +359,26 @@ class _MyHomePageState extends State<MyHomePage> {
 
        // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  void _requestIOSPermissions() {
+    flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  }
+
+  void _configureSelectNotificationSubject() {
+    selectNotificationSubject.stream.listen((String payload) async {
+      await route(mtype,mvalue);
+      setState(() {
+        mtype = '0';
+      });
+    });
   }
 }
 
@@ -579,9 +678,11 @@ class SeriesState extends State<SeriesWidget>{
               ),
 
               Container(
+                width:100,
                 margin: EdgeInsets.only(top:5),
-                child: Text(list[j]["name"],textAlign: TextAlign.left,style:TextStyle(
+                child: Text(list[j]["name"],overflow: TextOverflow.ellipsis,textAlign: TextAlign.left,style:TextStyle(
                     color: Colors.black,
+
                 )),
 
               ),

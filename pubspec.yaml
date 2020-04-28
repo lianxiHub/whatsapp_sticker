@@ -36,6 +36,9 @@ dependencies:
   flutter_local_notifications: ^1.4.1
   rxdart: ^0.23.1
   http: ^0.12.0+4
+  in_app_purchase: ^0.3.1+2
+  shared_preferences: ^0.5.6+3
+  country_codes: ^0.1.0
 
 
 dev_dependencies:

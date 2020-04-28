@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'emoji.dart';
 //import 'sticker.dart';
-
+//背景颜色e5到f2
 
 const iconUrl = "http://necta.online/emoji/icons/";
 class readSeriesWidget extends StatefulWidget{
@@ -60,7 +60,14 @@ class readSeriesState extends State<readSeriesWidget>{
           constraints: BoxConstraints(
             minHeight: MediaQuery.of(context).size.height,
           ),
-          color: Color(0xFFf5f5f5),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors:[Color(0xFFe5e5e5), Color(0xFFf2f2f2)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            )
+          ),
+//          color: Color(0xFFf5f5f5),
           child:
             Padding(
             padding: EdgeInsets.all(10),
@@ -96,6 +103,7 @@ class ListState extends State<ListWidget>{
       list.add(
           Container(
             height:120,
+//              color:Color(0xFFf7f7f7),
             color: Colors.white,
             padding: EdgeInsets.all(10),
             margin: EdgeInsets.only(bottom: 10),
@@ -169,9 +177,11 @@ class ListState extends State<ListWidget>{
             )),
       );
     }
-    return Row(
-      children: list,
-    );
+    return
+      Row(
+          children: list,
+        );
+
   }
 
   @override

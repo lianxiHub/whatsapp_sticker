@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:flutter/services.dart';
 import 'package:flutter_whatsapp_stickers/flutter_whatsapp_stickers.dart';
 import 'premium.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Directory _appDocsDir;
 File fileFromDocsDir(String filename)  {
@@ -18,6 +19,8 @@ File fileFromDocsDir(String filename)  {
   return File(pathName);
 }
 const iconUrl = "http://necta.online/emoji/icons/";
+bool purchase = false;
+
 class readPackWidget extends StatefulWidget{
   readPackWidget({
     Key key,
@@ -29,10 +32,22 @@ class readPackWidget extends StatefulWidget{
   readPackState createState() => readPackState();
 }
 
+Future setPurchse() async{
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  purchase = prefs.getBool("purchse");
+  print("purchse>>>$purchase");
+//  return true;
+
+}
+
 class readPackState extends State<readPackWidget>{
   Future setDir () async{
     _appDocsDir =await getApplicationDocumentsDirectory();
   }
+
+
+
+
   List iconList=[];
   String name = "";
   String whatsapp;
@@ -40,8 +55,17 @@ class readPackState extends State<readPackWidget>{
   bool isOver = false;
   void initState(){
     setDir();
+    setPurchse();
     print("initState");
     getPack();
+
+  }
+
+  void didChangeDependencies() async {
+    super.didChangeDependencies();
+    print("didChangeDependencies");
+
+
   }
   Future getPack() async{
     HttpClient httpClient = new HttpClient();
@@ -51,9 +75,7 @@ class readPackState extends State<readPackWidget>{
     Map data = jsonDecode(await response.transform(utf8.decoder).join());
     httpClient.close();
     if(data['result'] == "OK"){
-//      return data['iconlist'];
     print(data);
-
       name = data['name'];
       whatsapp = data["whatsapp"];
       iconList = data['iconlist'];
@@ -107,15 +129,24 @@ class PackState extends State<PackWidget>{
        for(var i=0;i<widget.iconList.length;i++){
          widget.iconList[i]["checked"] = false;
        }
+       ifdownloaded(widget.iconList);
    }
 
    Future getPath() async{
      dir=(await getApplicationDocumentsDirectory()).path;
    }
 
+   void didChangeDependencies() async {
+     super.didChangeDependencies();
+     print("didChangeDependencies2");
+//     await setPurchse();
+
+   }
+
   List<String> checkedList = [];
    Widget getBtnWidget(){
-     if(widget.pro == '1'){
+     print("getBtnWidget");
+     if(widget.pro == '1' && !purchase){
        return
          Positioned(
            bottom:80,
@@ -250,7 +281,7 @@ class PackState extends State<PackWidget>{
                         NetworkToFileImage(
                             url: iconUrl+f['img'],
                             file: fileFromDocsDir(f['img']),
-                            debug: true)),
+                            )),
                       ),
 
 //                     Image.network(iconUrl+f['img'],width:60),
@@ -282,48 +313,12 @@ class PackState extends State<PackWidget>{
                 }).toList()
             ),
           ),
-          getBtnWidget()
-//        Container(
-//          width:200,
-//          height:50,
-//          decoration: BoxDecoration(
-//            color: Color(0xFFc3185e),
-//            borderRadius: BorderRadius.all(Radius.circular(25))
-//          ),
-//          child: FlatButton(
-//            shape: RoundedRectangleBorder(
-//              borderRadius: BorderRadius.circular(25)
-//            ),
-////            color: Colors.white,
-//            color:Color(0xFFc3185e) ,
-//            child: Text("SHARE",
-//            style:TextStyle(
-//              color: Colors.white
-//            )),
-////            onPressed: _requestAppDocumentsDirectory
-//          onPressed: () async{
-//            String dir=(await getApplicationDocumentsDirectory()).path;
-//            for(var i=0;i<checkedList.length;i++){
-//              File f=new File(checkedList[i]);
-//              var dir_bool=await f.exists();
-//              if(dir_bool){
-//                print("exist");
-//              }else{
-//                print("not exist");
-//              }
-//            }
-////            if (f != null) {
-////              ShareExtend.share(f.path, "image",
-////                  sharePanelTitle: "share image title",
-////                  subject: "share image subject");
-////            }
-//            ShareExtend.shareMultiple(checkedList, "image");
-//
-//
-//          },
-//
-//          ),
-//        ),
+          FutureBuilder(
+            future: setPurchse(),
+            builder: (BuildContext context, AsyncSnapshot snapshot){
+              return getBtnWidget();
+            },
+          )
 
         ],
       )
@@ -357,6 +352,12 @@ class StickerState extends State<StickerWidget>{
       widget.iconList[i]["checked"] = false;
     }
     initPlatformState();
+  }
+
+  void didChangeDependencies(){
+    print("didChangeDependencies3");
+//    setPurchse();
+
   }
 
   String _platformVersion = 'Unknown';
@@ -498,9 +499,11 @@ class StickerState extends State<StickerWidget>{
 
   }
   Widget getBtnWidget(){
+    print("getBtnWidget");
     if(hasDone == true){
       if(_stickerPackInstalled == false){
-        if(widget.pro == '1'){
+
+        if(widget.pro == '1' && !purchase){
           return
             Positioned(
               bottom:80,
@@ -664,7 +667,7 @@ class StickerState extends State<StickerWidget>{
                             width:60,
                             child: Image(image:
                             NetworkToFileImage(
-                                debug: true,
+                                //debug: true,
                                 url: iconUrl+f['img'],
                                 file: fileFromDocsDir(f["img"]))),
                           )
@@ -675,7 +678,13 @@ class StickerState extends State<StickerWidget>{
                     }).toList()
                 ),
               ),
-              getBtnWidget()
+              FutureBuilder(
+                future: setPurchse(),
+                builder: (BuildContext context, AsyncSnapshot snapshot){
+                  return getBtnWidget();
+                },
+              )
+
 
             ],
           )
@@ -695,5 +704,19 @@ class StickerState extends State<StickerWidget>{
     print(error);
   }
 }
+
+void ifdownloaded(list) async {
+  int num = 0;
+  String dir = (await getApplicationDocumentsDirectory()).path;
+   for(var i=0;i<list.length;i++){
+     File a = File("$dir/${list[i]["img"]}");
+     if(await a.exists()){
+       num++;
+     }
+   }
+   print(num);
+
+}
+
 
 
