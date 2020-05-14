@@ -39,6 +39,9 @@ dependencies:
   in_app_purchase: ^0.3.1+2
   shared_preferences: ^0.5.6+3
   country_codes: ^0.1.0
+  url_launcher: ^5.4.7
+  linker: ^0.0.2
+
 
 
 dev_dependencies:
@@ -57,6 +60,7 @@ flutter:
   uses-material-design: true
   assets:
     - icons/
+    - bg/
   fonts:
    - family: our
      fonts:

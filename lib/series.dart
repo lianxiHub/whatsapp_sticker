@@ -8,7 +8,7 @@ import 'emoji.dart';
 //import 'sticker.dart';
 //背景颜色e5到f2
 
-const iconUrl = "http://necta.online/emoji/icons/";
+const iconUrl = "http://necta.us/emoji/icons/";
 class readSeriesWidget extends StatefulWidget{
   readSeriesWidget({
     Key key,
@@ -31,7 +31,7 @@ class readSeriesState extends State<readSeriesWidget>{
   Future getSeries() async{
     HttpClient httpClient = new HttpClient();
     //打开Http连接
-    HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.online/emoji/readseries.php?seriesid="+widget.seriesid));
+    HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.us/emoji/readseries.php?seriesid="+widget.seriesid));
     HttpClientResponse response = await request.close();
     Map data = jsonDecode(await response.transform(utf8.decoder).join());
     httpClient.close();
@@ -113,21 +113,51 @@ class ListState extends State<ListWidget>{
                   Container(
                     margin:EdgeInsets.only(top:10,bottom:15),
                     child: Row(
-                      children: <Widget>[
-                        Container(
-                          margin:EdgeInsets.only(right:15,left:5,),
-                          child: Text(widget.packlist[i]["name"],style:TextStyle(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children:<Widget>[
+                        Row(
+                          children: <Widget>[
+                            Container(
+                              margin:EdgeInsets.only(right:15,left:5,),
+                              child: Text(widget.packlist[i]["name"],style:TextStyle(
 
-                              fontWeight: FontWeight.w600
-                          )),
+                                  fontWeight: FontWeight.w600
+                              )),
+                            ),
+
+                            Text(widget.packlist[i]["author"],style:TextStyle(
+
+                                color:Color(0xff646464),
+                                fontSize: 12
+                            )),
+                          ],
+
                         ),
+                        widget.packlist[i]["pro"]=="1"?Row(
+                          children: <Widget>[
+                            Container(
+                              width:20,
+                              margin: EdgeInsets.only(right:2),
+                              child: ImageIcon(
+                                  AssetImage("icons/crown.png"),
+                                  color:Color(0xffE91E63)
+                              ),
+                            ),
+                            Container(
+                              margin: EdgeInsets.only(right:10),
+                              child: Text("Premium",
+                                  textAlign: TextAlign.left,style:TextStyle(
+                                    color: Color(0xffE91E63),
+                                    fontSize: 13,
 
-                        Text(widget.packlist[i]["author"],style:TextStyle(
+                                  )),
+                            )
 
-                            color:Color(0xff646464),
-                            fontSize: 12
-                        ))
-                      ],
+
+                          ],
+                        ):Text("")
+                      ]
+
                     ),
                   ),
 

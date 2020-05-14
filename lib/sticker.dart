@@ -12,7 +12,7 @@ import 'package:flutter_whatsapp_stickers/flutter_whatsapp_stickers.dart';
 import 'premium.dart';
 
 
-const iconUrl = "http://necta.online/emoji/icons/";
+const iconUrl = "http://necta.us/emoji/icons/";
 
 Directory _appDocsDir;
 class readStickerWidget extends StatefulWidget{
@@ -65,7 +65,7 @@ class readStickerState extends State<readStickerWidget>{
   Future getPack() async{
     HttpClient httpClient = new HttpClient();
     //打开Http连接
-    HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.online/emoji/readpack.php?packid="+widget.packid));
+    HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.us/emoji/readpack.php?packid="+widget.packid));
     HttpClientResponse response = await request.close();
     Map data = jsonDecode(await response.transform(utf8.decoder).join());
     httpClient.close();

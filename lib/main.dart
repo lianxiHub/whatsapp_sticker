@@ -1,3 +1,4 @@
+import 'package:emojistore/about.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
@@ -19,6 +20,9 @@ import 'consumable_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:country_codes/country_codes.dart';
 import 'package:flutter/services.dart';
+import "premium.dart";
+import "package:share_extend/share_extend.dart";
+import 'about.dart';
 
 final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -49,6 +53,10 @@ void main() async{
 //  debugPaintPointersEnabled = true;
 //  debugPaintLayerBordersEnabled = true;
 //  debugRepaintRainbowEnabled = true;
+//强制竖屏
+
+
+
 
   InAppPurchaseConnection.enablePendingPurchases();
 
@@ -58,7 +66,7 @@ void main() async{
 
   notificationAppLaunchDetails =
   await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
-  var initializationSettingsAndroid = AndroidInitializationSettings('app_icon');
+  var initializationSettingsAndroid = AndroidInitializationSettings('notification');
 //  // Note: permissions aren't requested here just to demonstrate that can be done later using the `requestPermissions()` method
 //  // of the `IOSFlutterLocalNotificationsPlugin` class
   var initializationSettingsIOS = IOSInitializationSettings(
@@ -83,12 +91,19 @@ void main() async{
 
 
   _appDocsDir = await getApplicationDocumentsDirectory();
+//  runApp(MyApp());
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown
+  ]);
+
+
   runApp(MyApp());
 
 
 }
 
-const iconUrl = "http://necta.online/emoji/icons/";
+const iconUrl = "http://necta.us/emoji/icons/";
 Directory _appDocsDir;
 
 
@@ -237,8 +252,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
   void initState(){
-//    print("initState");
-
     super.initState();
 //    final Stream purchaseUpdates =
 //        InAppPurchaseConnection.instance.purchaseUpdatedStream;
@@ -250,7 +263,7 @@ class _MyHomePageState extends State<MyHomePage> {
     getHttp();
     _firebaseMessaging.getToken().then((String token) {
       assert(token != null);
-//      print("token>>$token");
+      print("token>>$token");
     });
 
     _requestIOSPermissions();
@@ -294,7 +307,7 @@ class _MyHomePageState extends State<MyHomePage> {
     print(deviceLocale.countryCode);
     HttpClient httpClient = new HttpClient();
     //打开Http连接
-    HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.online/emoji/exploreV1.php?country=${deviceLocale.countryCode}"));
+    HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.us/emoji/exploreV1.php?country=${deviceLocale.countryCode}"));
     HttpClientResponse response = await request.close();
     Map data = jsonDecode(await response.transform(utf8.decoder).join());
     httpClient.close();
@@ -318,15 +331,50 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
   }
+  List<String> _abs = ['Rate 5 Stars', 'Share App', 'Remove Ads','About'];
 
   @override
   Widget build(BuildContext context) {
+    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+    final SnackBar snackBar = const SnackBar(content: Text('Showing Snackbar'));
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title,
         style: TextStyle(
           fontWeight: FontWeight.w600
         ),),
+        actions: <Widget>[
+          PopupMenuButton(
+              onSelected: (val)  {
+                switch(val){
+                  case "Rate 5 Stars":
+                    LaunchReview.launch(androidAppId: "com.emoji.store",
+                    );
+                    break;
+                  case "Share App":
+                    ShareExtend.share("Thousands free emoji and stickers for any chat messengers. Includes cartoon emoji, love emoji, gif emoji and many other funny emoji. Try it for free: https://play.google.com/store/apps/details?id=com.emoji.store", "text");
+                    break;
+                  case "Remove Ads":
+                    Navigator.push( context,
+                        MaterialPageRoute(builder: (context) {
+                          return PremiumWidget();
+                        }));
+                    break;
+                  case "About":
+                    Navigator.push( context,
+                        MaterialPageRoute(builder: (context) {
+                          return AboutWidget();
+                        }));
+                    break;
+
+
+
+                 }
+              },
+              icon: Icon(Icons.more_vert),
+              itemBuilder: (context) =>
+                  List.generate(_abs.length, (index) => PopupMenuItem(value: _abs[index], child: Text(_abs[index]))))
+        ],
       ),
       body:
       RefreshIndicator(
@@ -399,8 +447,9 @@ class SwiperState extends State<SwiperWidget>{
   Widget build(BuildContext context) {
     // TODO: implement build
     return Container(
+      margin:EdgeInsets.only(top: 5),
       width: MediaQuery.of(context).size.width,
-      height:150,
+      height:MediaQuery.of(context).size.width/2.5,
       child: new Swiper(
         itemBuilder: (BuildContext context,int index){
          // return new Image.network(iconUrl+widget.banner[index]['img'],fit: BoxFit.fill,);
@@ -412,7 +461,7 @@ class SwiperState extends State<SwiperWidget>{
         },
         itemCount: widget.banner.length,
         pagination: new SwiperPagination(),
-        control: new SwiperControl(),
+//        control: new SwiperControl(),
         autoplay: true,
         onTap:(index){
           switch (widget.banner[index]["clicktype"]){
@@ -507,7 +556,7 @@ class FeatureState extends State<FeatureWidget>{
   Widget build(BuildContext context) {
     return GestureDetector(
       child: Container(
-          margin: EdgeInsets.only(top: 0),
+          margin: EdgeInsets.only(top: 5),
           padding:EdgeInsets.only(top:5,bottom:5),
           decoration: BoxDecoration(color: Colors.white),
           child:Column(
@@ -665,7 +714,7 @@ class SeriesState extends State<SeriesWidget>{
                     width:100,
                     height:100,
                     padding: EdgeInsets.all(5),
-                    decoration: BoxDecoration(color: Color(0xFFf6f6f6)),
+                    decoration: BoxDecoration(color: Color(0xFFf7f7f7)),
                     child: buildGridView(list[j]["iconlist"])
                 ),
                 onTap: (){

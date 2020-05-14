@@ -12,13 +12,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_whatsapp_stickers/flutter_whatsapp_stickers.dart';
 import 'premium.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 Directory _appDocsDir;
 File fileFromDocsDir(String filename)  {
   String pathName = p.join(_appDocsDir.path, filename);
   return File(pathName);
 }
-const iconUrl = "http://necta.online/emoji/icons/";
+const iconUrl = "http://necta.us/emoji/icons/";
 bool purchase = false;
 
 class readPackWidget extends StatefulWidget{
@@ -34,7 +36,11 @@ class readPackWidget extends StatefulWidget{
 
 Future setPurchse() async{
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  purchase = prefs.getBool("purchse");
+  print("prefs>>>>$prefs");
+
+  if(prefs.getBool("purchse") != null){
+    purchase = prefs.getBool("purchse");
+  }
   print("purchse>>>$purchase");
 //  return true;
 
@@ -70,7 +76,7 @@ class readPackState extends State<readPackWidget>{
   Future getPack() async{
     HttpClient httpClient = new HttpClient();
     //打开Http连接
-    HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.online/emoji/readpack.php?packid="+widget.packid));
+    HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.us/emoji/readpack.php?packid="+widget.packid));
     HttpClientResponse response = await request.close();
     Map data = jsonDecode(await response.transform(utf8.decoder).join());
     httpClient.close();
@@ -96,9 +102,9 @@ class readPackState extends State<readPackWidget>{
         ),
         body:Center(
           child:Container(
-            color: Color(0xFFf5f5f5),
+            color: Color(0xFFf7f7f7),
             child:
-                isOver?(whatsapp == "0" ? PackWidget(iconList:iconList,pro:pro) : StickerWidget(iconList: iconList,packid:widget.packid,pro:pro,name:name)):CircularProgressIndicator()
+                isOver?(whatsapp == "0" ? PackWidget(iconList:iconList,packid:widget.packid,pro:pro) : StickerWidget(iconList: iconList,packid:widget.packid,pro:pro,name:name)):CircularProgressIndicator()
 //              iconList.length>0?PackWidget(iconList:iconList):CircularProgressIndicator()
           )
 
@@ -113,13 +119,24 @@ class PackWidget extends StatefulWidget{
   PackWidget({
     Key key,
     this.iconList,
-    this.pro
+    this.pro,
+    this.packid
   }):super(key:key);
   List iconList;
   String pro;
+  String packid;
 
   @override
   PackState createState() => PackState();
+}
+
+Future want(packid) async{
+  HttpClient httpClient = new HttpClient();
+  //打开Http连接
+  HttpClientRequest request = await httpClient.getUrl(Uri.parse("http://necta.us/emoji/want.php?packid="+packid));
+  HttpClientResponse response = await request.close();
+//     Map data = jsonDecode(await response.transform(utf8.decoder).join());
+  httpClient.close();
 }
 
 class PackState extends State<PackWidget>{
@@ -129,7 +146,6 @@ class PackState extends State<PackWidget>{
        for(var i=0;i<widget.iconList.length;i++){
          widget.iconList[i]["checked"] = false;
        }
-       ifdownloaded(widget.iconList);
    }
 
    Future getPath() async{
@@ -143,13 +159,16 @@ class PackState extends State<PackWidget>{
 
    }
 
-  List<String> checkedList = [];
+
+
+
+   List<String> checkedList = [];
    Widget getBtnWidget(){
      print("getBtnWidget");
      if(widget.pro == '1' && !purchase){
        return
          Positioned(
-           bottom:80,
+           bottom:50,
            left:(MediaQuery.of(context).size.width-220)/2,
            right:(MediaQuery.of(context).size.width-220)/2,
            child: new Container(
@@ -186,6 +205,7 @@ class PackState extends State<PackWidget>{
                    ),
 
                    onPressed: () async{
+                     await want(widget.packid);
                      Navigator.push( context,
                          MaterialPageRoute(builder: (context) {
                            return PremiumWidget();
@@ -203,7 +223,7 @@ class PackState extends State<PackWidget>{
      }else{
        return
          Positioned(
-           bottom:80,
+           bottom:50,
            left:(MediaQuery.of(context).size.width-220)/2,
            right:(MediaQuery.of(context).size.width-220)/2,
            child: Container(
@@ -259,18 +279,20 @@ class PackState extends State<PackWidget>{
     return
     Container(
         constraints: BoxConstraints(
-//          minWidth: 180,
           minHeight: MediaQuery.of(context).size.height,
         ),
       child: Stack(
         children: <Widget>[
           Container(
-            height:500,
-            margin: EdgeInsets.only(top:20),
+//            color: Colors.green,
+            height:480,
+//            padding: EdgeInsets.only(top:20),
             child: GridView(
+              padding: EdgeInsets.only(top:20),
+
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4, //横轴三个子widget
-                    childAspectRatio: 0.8//宽高比为1时，子widget
+                    childAspectRatio: 1,//宽高比为1时，子widget
                 ),
                 children:widget.iconList.map((f){
                   return Column(
@@ -436,7 +458,7 @@ class StickerState extends State<StickerWidget>{
         {
           "identifier":widget.packid,
           "name":widget.name,
-          "publisher": "Example Sticker Pack",
+          "publisher": "Emoji Store",
           "tray_image_file":widget.iconList[0]["img"],
           "publisher_email":"",
           "publisher_website": "",
@@ -506,7 +528,7 @@ class StickerState extends State<StickerWidget>{
         if(widget.pro == '1' && !purchase){
           return
             Positioned(
-              bottom:80,
+              bottom:50,
               left:(MediaQuery.of(context).size.width-220)/2,
               right:(MediaQuery.of(context).size.width-220)/2,
               child: new Container(
@@ -543,6 +565,7 @@ class StickerState extends State<StickerWidget>{
                       ),
 
                       onPressed: () async{
+                        await want(widget.packid);
                         Navigator.push( context,
                             MaterialPageRoute(builder: (context) {
                               return PremiumWidget();
@@ -560,7 +583,7 @@ class StickerState extends State<StickerWidget>{
         }else{
           return
             Positioned(
-              bottom:80,
+              bottom:50,
               left:(MediaQuery.of(context).size.width-220)/2,
               right:(MediaQuery.of(context).size.width-220)/2,
               child: new Container(
@@ -595,7 +618,7 @@ class StickerState extends State<StickerWidget>{
         }
       }else{
         return Positioned(
-            bottom: 80,
+            bottom: 50,
             left:(MediaQuery.of(context).size.width-185)/2,
             right:(MediaQuery.of(context).size.width-185)/2,
             child:
@@ -605,25 +628,54 @@ class StickerState extends State<StickerWidget>{
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Icon(Icons.done),
-                  Text.rich(TextSpan(
-                      style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16
-                      ),
-                      children: [
-                        TextSpan(
-                          text:" Added to ",
-
+                  GestureDetector(
+                    child: Text.rich(TextSpan(
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16
                         ),
-                        TextSpan(
+                        children: [
+                          TextSpan(
+                            text:" Added to ",
+
+                          ),
+                          TextSpan(
                             text: "WhatsApp",
                             style: TextStyle(
                               color:Color(0xffE91E63),
 
-                            )
-                        )
-                      ]
-                  )),
+                            ),
+
+                          )
+                        ]
+                    )),
+                    onTap: () async {
+
+
+//                      try {
+//                        await Linker.startActivity(new Intent.callApp( packageName:  "com.tencent.mm",className: "com.tencent.mm.ui.LauncherUI"));
+//                      } on PlatformException catch (e) {
+//                        print("Open failed $e");
+//                      }
+//                      print("tap");
+                      const url = 'whatsapp://app ';
+                      await launch(url);
+                      if (await canLaunch(url)) {
+                        print("andriod");
+                        await launch(url);
+                      } else {
+                        //  Ios
+                        print("IOS");
+                        const url = 'whatsapp://';
+                        if(await canLaunch(url)){
+                          await launch(url);
+                        }else{
+                          throw 'Could not launch $url';
+                        }
+                      }
+                    },
+                  )
+
 
 
                 ],
@@ -652,9 +704,10 @@ class StickerState extends State<StickerWidget>{
           child: Stack(
             children: <Widget>[
               Container(
-                height:500,
-                margin: EdgeInsets.only(top:20),
+                height:480,
+//                margin: EdgeInsets.only(top:20),
                 child: GridView(
+                    padding: EdgeInsets.only(top:20),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 4, //横轴三个子widget
                         childAspectRatio: 1//宽高比为1时，子widget
@@ -705,18 +758,7 @@ class StickerState extends State<StickerWidget>{
   }
 }
 
-void ifdownloaded(list) async {
-  int num = 0;
-  String dir = (await getApplicationDocumentsDirectory()).path;
-   for(var i=0;i<list.length;i++){
-     File a = File("$dir/${list[i]["img"]}");
-     if(await a.exists()){
-       num++;
-     }
-   }
-   print(num);
 
-}
 
 
 
