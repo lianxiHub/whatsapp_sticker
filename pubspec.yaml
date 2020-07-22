@@ -27,20 +27,23 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.3
   flutter_swiper: ^1.1.6
-  path_provider: ^1.6.5
-  network_to_file_image: ^2.2.8
-  share_extend: ^1.1.1
-  flutter_whatsapp_stickers: ^1.0.0+3
+  path_provider: ^1.6.8
+  network_to_file_image: ^2.3.0
+  share_extend: ^1.1.9
+  flutter_whatsapp_stickers: ^1.0.0+4
   launch_review: ^2.0.0
   firebase_messaging: ^6.0.13
   flutter_local_notifications: ^1.4.1
   rxdart: ^0.23.1
   http: ^0.12.0+4
-  in_app_purchase: ^0.3.1+2
-  shared_preferences: ^0.5.6+3
+  in_app_purchase: ^0.3.4+1
+  shared_preferences: ^0.5.7+2
   country_codes: ^0.1.0
   url_launcher: ^5.4.7
-  linker: ^0.0.2
+  whatsapp_stickers: ^0.0.2
+  esys_flutter_share: ^1.0.2
+  flutter_launcher_icons: ^0.7.5
+
 
 
 
